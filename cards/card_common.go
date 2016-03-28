@@ -13,16 +13,12 @@ func NewCardCommon(id, color, points int) uno.Card {
 		UnoCard{
 			id:       id,
 			type_id:  CARD_COMMON,
-			title:    "",
+			title:    ConvertTitle(TYPE_COMMON, CARD_COMMON, color, points),
 			color:    color,
 			points:   points,
 			ext_type: TYPE_COMMON,
 		},
 	}
-}
-
-func (this *UnoCardCommon) CheckPlay() (bool, string) {
-	return false, "花色不对"
 }
 
 func NewCardCommons(id_from int) []uno.Card {

@@ -3,47 +3,44 @@ package cards
 import (
 	"container/list"
 	"github.com/jesusslim/uno"
-	"math/rand"
-	"time"
 )
 
 type UnoDesk struct {
-	cards []uno.Card
+	cards map[int]uno.Card
 	list  *list.List
 }
 
 func NewDesk() uno.Desk {
 	return &UnoDesk{
-		cards: []uno.Card{},
+		cards: map[int]uno.Card{},
 		list:  list.New(),
 	}
 }
 
 func (this *UnoDesk) PrepareCards(cards []uno.Card) {
 	for _, v := range cards {
-		this.cards = append(this.cards, v)
+		this.cards[v.GetId()] = v
 	}
 }
 
-func (this *UnoDesk) Shuffle() []uno.Card {
-	seed := rand.New(rand.NewSource(time.Now().UnixNano()))
-	length := len(this.cards)
-	temp_arr := []int{}
+func (this *UnoDesk) Shuffle() map[int]uno.Card {
 	for k, _ := range this.cards {
-		temp_arr = append(temp_arr, k)
-	}
-	for i := length - 1; i > 0; i-- {
-		r := seed.Intn(length)
-		temp_arr[r], temp_arr[i] = temp_arr[i], temp_arr[r]
-	}
-	for _, v := range temp_arr {
-		this.list.PushBack(v)
+		this.list.PushBack(k)
 	}
 	return this.cards
 }
 
-func (this *UnoDesk) GetCards() []uno.Card {
+func (this *UnoDesk) GetCards() map[int]uno.Card {
 	return this.cards
+}
+
+func (this *UnoDesk) GetCard(id int) (uno.Card, bool) {
+	card, ok := this.cards[id]
+	if ok {
+		return card, true
+	} else {
+		return nil, false
+	}
 }
 
 func (this *UnoDesk) GetNext() uno.Card {

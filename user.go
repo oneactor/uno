@@ -3,9 +3,9 @@ package uno
 type User interface {
 	GetId() int
 	GetNick() string
-	GetCards() []Card
+	GetCards() map[int]Card
+	GetCardsNum() int
 	AddCard(Card)
-	RemoveCard(Card)
-	AddCards([]Card)
-	RemoveCards([]Card)
+	RemoveCard(int)
+	RemoveCards([]int)
 }
