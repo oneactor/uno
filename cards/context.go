@@ -237,6 +237,8 @@ func (this *UnoContext) Draw(num int) (bool, string) {
 			u.AddCard(card)
 		}
 	}
+	//重置回合类型
+	this.turn_type = TURN_TYPE_COMMON
 	this.draw_num_ext = 0
 	return true, ""
 }
@@ -332,11 +334,11 @@ func (this *UnoContext) CheckPlay(ids []int) (bool, string) {
 	case TURN_TYPE_JUMP:
 		switch the_type_id {
 		case CARD_COMMON, CARD_JUMP, CARD_REV, CARD_WILD, CARD_DRAW_2, CARD_WILD_DRAW_4:
+			//重置回合类型
+			this.turn_type = TURN_TYPE_COMMON
 			return false, "该回合被跳过"
 			break
 		}
-		//重置回合类型
-		this.turn_type = TURN_TYPE_COMMON
 		break
 	}
 	//判断反转/摸牌
