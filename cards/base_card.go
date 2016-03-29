@@ -33,6 +33,9 @@ const (
 	POINTS_7 = 7
 	POINTS_8 = 8
 	POINTS_9 = 9
+
+	COLOR_NO_MATCH  = -100
+	POINTS_NO_MATCH = -100
 )
 
 type UnoCard struct {
@@ -42,6 +45,28 @@ type UnoCard struct {
 	color    int
 	points   int
 	ext_type int
+}
+
+func ConvertColor(color int) string {
+	result := ""
+	switch color {
+	case COLOR_BLACK:
+		result += "黑色"
+		break
+	case COLOR_BLUE:
+		result += "蓝色"
+		break
+	case COLOR_GREEN:
+		result += "绿色"
+		break
+	case COLOR_RED:
+		result += "红色"
+		break
+	case COLOR_YELLOW:
+		result += "黄色"
+		break
+	}
+	return result
 }
 
 func ConvertTitle(ext_type, type_id, color, points int) string {
@@ -77,23 +102,7 @@ func ConvertTitle(ext_type, type_id, color, points int) string {
 		result += " 万能+4 "
 		break
 	}
-	switch color {
-	case COLOR_BLACK:
-		result += "<黑色>"
-		break
-	case COLOR_BLUE:
-		result += "<蓝色>"
-		break
-	case COLOR_GREEN:
-		result += "<绿色>"
-		break
-	case COLOR_RED:
-		result += "<红色>"
-		break
-	case COLOR_YELLOW:
-		result += "<黄色>"
-		break
-	}
+	result += "<" + ConvertColor(color) + ">"
 	if ext_type == TYPE_COMMON {
 		result += fmt.Sprintf("%d", points) + "点"
 	}
@@ -155,8 +164,7 @@ func (this *UnoCard) GetAttr(name string) interface{} {
 	case "id":
 		return this.id
 		break
-	case "type_id":
-	case "typeId":
+	case "type_id", "typeId":
 		return this.type_id
 		break
 	case "title":
@@ -168,8 +176,7 @@ func (this *UnoCard) GetAttr(name string) interface{} {
 	case "points":
 		return this.points
 		break
-	case "ext_type":
-	case "extType":
+	case "ext_type", "extType":
 		return this.ext_type
 		break
 	}
@@ -181,8 +188,7 @@ func (this *UnoCard) GetAttrInt(name string) int {
 	case "id":
 		return this.id
 		break
-	case "type_id":
-	case "typeId":
+	case "type_id", "typeId":
 		return this.type_id
 		break
 	case "color":
@@ -191,8 +197,7 @@ func (this *UnoCard) GetAttrInt(name string) int {
 	case "points":
 		return this.points
 		break
-	case "ext_type":
-	case "extType":
+	case "ext_type", "extType":
 		return this.ext_type
 		break
 	}

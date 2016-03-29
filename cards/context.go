@@ -3,6 +3,14 @@ package cards
 import (
 	"fmt"
 	"github.com/jesusslim/uno"
+	"math/rand"
+	"time"
+)
+
+const (
+	TURN_TYPE_COMMON = 1
+	TURN_TYPE_DRAW   = 2
+	TURN_TYPE_JUMP   = 3
 )
 
 type UnoContext struct {
@@ -15,9 +23,32 @@ type UnoContext struct {
 	cards_last       map[int]uno.Card
 	cards_now        map[int]uno.Card
 	desk             uno.Desk
-	color_tmp        int
-	draw_num_ext     int
 	this_turn_played bool
+	seed             *rand.Rand
+
+	//状态与回合相关
+	color_tmp    int
+	points_tmp   int
+	draw_num_ext int
+	turn_type    int
+}
+
+func (this *UnoContext) GetTurnTypeByCard(card_type_id int) int {
+	switch card_type_id {
+	case CARD_COMMON, CARD_WILD:
+		return TURN_TYPE_COMMON
+		break
+	case CARD_JUMP:
+		return TURN_TYPE_JUMP
+		break
+	case CARD_REV:
+		return this.turn_type
+		break
+	case CARD_DRAW_2, CARD_WILD_DRAW_4:
+		return TURN_TYPE_DRAW
+		break
+	}
+	return this.turn_type
 }
 
 func NewUnoContext(desk uno.Desk) *UnoContext {
@@ -31,9 +62,13 @@ func NewUnoContext(desk uno.Desk) *UnoContext {
 		cards_last:       map[int]uno.Card{},
 		cards_now:        map[int]uno.Card{},
 		desk:             desk,
-		color_tmp:        COLOR_BLACK,
-		draw_num_ext:     0,
 		this_turn_played: false,
+		seed:             rand.New(rand.NewSource(time.Now().UnixNano())),
+
+		color_tmp:    COLOR_NO_MATCH,
+		points_tmp:   POINTS_NO_MATCH,
+		draw_num_ext: 0,
+		turn_type:    TURN_TYPE_COMMON,
 	}
 }
 
@@ -109,8 +144,10 @@ func (this *UnoContext) CardsUseWithId(ids ...int) {
 }
 
 func (this *UnoContext) TurnNext() {
-	this.cards_last = this.cards_now
-	this.cards_now = map[int]uno.Card{}
+	if this.this_turn_played {
+		this.cards_last = this.cards_now
+		this.cards_now = map[int]uno.Card{}
+	}
 	if this.clockwise {
 		this.user_index_now = (this.user_index_now + 1) % len(this.user_queue)
 	} else {
@@ -120,7 +157,7 @@ func (this *UnoContext) TurnNext() {
 		}
 		this.user_index_now = temp % len(this.user_queue)
 	}
-	fmt.Println("user_index_now:", this.user_index_now)
+	this.this_turn_played = false
 }
 
 func (this *UnoContext) GetDesk() uno.Desk {
@@ -152,15 +189,37 @@ func (this *UnoContext) OnPlay(ids []int, params map[string]interface{}) {
 	u := this.GetNowUser()
 	for k, id := range ids {
 		if k == 0 {
+			//turn status
 			card, _ := this.GetDesk().GetCard(id)
-			if card.GetAttrInt("color") == COLOR_BLACK {
+			c_color := card.GetAttrInt("color")
+			c_points := card.GetAttrInt("points")
+			switch card.GetTypeId() {
+			case CARD_COMMON:
+				this.color_tmp = c_color
+				this.points_tmp = c_points
+				break
+			case CARD_JUMP:
+				break
+			case CARD_REV:
+				break
+			case CARD_WILD, CARD_WILD_DRAW_4:
+				this.points_tmp = POINTS_NO_MATCH
 				color_in_param, ok := params["color"]
 				if ok {
 					this.color_tmp = color_in_param.(int)
+				} else {
+					colors := []int{COLOR_BLUE, COLOR_GREEN, COLOR_RED, COLOR_YELLOW}
+					index := this.seed.Intn(len(colors))
+					this.color_tmp = colors[index]
 				}
-			} else {
-				this.color_tmp = card.GetAttrInt("color")
+				fmt.Println("指定颜色:", ConvertColor(this.color_tmp))
+				break
+			case CARD_DRAW_2:
+				this.color_tmp = c_color
+				this.points_tmp = POINTS_NO_MATCH
+				break
 			}
+			this.turn_type = this.GetTurnTypeByCard(card.GetTypeId())
 		}
 		u.RemoveCard(id)
 		this.CardsUseWithId(id)
@@ -172,6 +231,7 @@ func (this *UnoContext) Draw(num int) (bool, string) {
 		return false, "Cards not enough."
 	} else {
 		u := this.GetNowUser()
+		fmt.Println(u.GetNick(), " 摸 ", fmt.Sprintf("%d", num), " 张")
 		for i := 0; i < num; i++ {
 			card := this.GetDesk().GetNext()
 			u.AddCard(card)
@@ -222,97 +282,61 @@ func (this *UnoContext) CheckPlay(ids []int) (bool, string) {
 	the_points := card_example.GetAttrInt("points")
 	the_color := card_example.GetAttrInt("color")
 	the_type_id := card_example.GetAttrInt("typeId")
-	the_ext_type := card_example.GetAttrInt("extType")
-	cards_last := this.GetCardsLast()
-	for _, v := range cards_last {
-		switch v.GetAttrInt("extType") {
-		case TYPE_COMMON:
-			switch the_ext_type {
-			case TYPE_COMMON:
-				if (v.GetAttrInt("color") != the_color) && (v.GetAttrInt("points") != the_points) {
-					return false, "花色且点数不对"
-				}
-				break
-			case TYPE_USEAGE:
-				if (v.GetAttrInt("color") != the_color) && (v.GetAttrInt("typeId") != the_type_id) {
-					return false, "功能牌花色或类型不对"
-				}
-				break
-			case TYPE_ALL_CAN:
-				if the_type_id == CARD_WILD_DRAW_4 {
-					u := this.GetNowUser()
-					cards_in_hands := u.GetCards()
-					for k, i_h := range cards_in_hands {
-						if k == card_example.GetId() {
-							continue
-						}
-						//手中无同花色可出时才允许
-						if (i_h.GetAttrInt("color") == v.GetAttrInt("color")) && (i_h.GetAttrInt("typeId") != CARD_WILD_DRAW_4) {
-							return false, "手中有同花色可出牌,不允许+4."
-						}
-					}
-				}
-				break
+	//the_ext_type := card_example.GetAttrInt("extType")
+	//cards_last := this.GetCardsLast()
+	//ins
+	switch this.turn_type {
+	case TURN_TYPE_COMMON:
+		switch the_type_id {
+		case CARD_COMMON:
+			if !this.Match(the_color, the_points, false) {
+				return false, "花色且点数不对"
 			}
 			break
-		case TYPE_USEAGE:
-			switch the_ext_type {
-			case TYPE_COMMON:
-				return false, "只允许跳过"
-				break
-			case TYPE_USEAGE:
-				if the_type_id != CARD_JUMP {
-					return false, "只允许跳过"
-				}
-				break
-			case TYPE_ALL_CAN:
-				return false, "只允许跳过"
-				break
+		case CARD_JUMP, CARD_REV, CARD_DRAW_2:
+			if !this.Match(the_color, the_points, true) {
+				return false, "功能牌花色不对"
 			}
 			break
-		case TYPE_ALL_CAN:
-			if v.GetAttrInt("typeId") == CARD_WILD {
-				switch the_ext_type {
-				case TYPE_COMMON:
-					if this.color_tmp != the_color {
-						return false, "花色不对"
-					}
-					break
-				case TYPE_USEAGE:
-					if this.color_tmp != the_color {
-						return false, "功能牌花色或类型不对"
-					}
-					break
-				case TYPE_ALL_CAN:
-					if the_type_id == CARD_WILD_DRAW_4 {
-						u := this.GetNowUser()
-						cards_in_hands := u.GetCards()
-						for k, i_h := range cards_in_hands {
-							if k == card_example.GetId() {
-								continue
-							}
-							//手中无同花色可出时才允许
-							if (i_h.GetAttrInt("color") == this.color_tmp) && (i_h.GetAttrInt("typeId") != CARD_WILD_DRAW_4) {
-								return false, "手中有同花色可出牌,不允许+4."
-							}
-						}
-					}
-					break
+		case CARD_WILD:
+			break
+		case CARD_WILD_DRAW_4:
+			u := this.GetNowUser()
+			cards_in_hands := u.GetCards()
+			for k, i_h := range cards_in_hands {
+				if k == card_example.GetId() {
+					continue
 				}
-			} else if v.GetAttrInt("typeId") == CARD_WILD_DRAW_4 {
-				if the_type_id == CARD_REV {
-					if the_color != this.color_tmp {
-						return false, "颜色错误"
-					}
-				} else if the_type_id == CARD_WILD_DRAW_4 {
-					//ok
-				} else {
-					return false, "出牌错误"
+				//手中无同花色可出时才允许
+				if (this.Match(i_h.GetAttrInt("color"), i_h.GetAttrInt("points"), false)) && (i_h.GetAttrInt("typeId") != CARD_WILD_DRAW_4) {
+					return false, "手中有同花色可出牌,不允许+4."
 				}
 			}
 			break
 		}
-		//只做一次
+		break
+	case TURN_TYPE_DRAW:
+		switch the_type_id {
+		case CARD_COMMON, CARD_JUMP, CARD_REV, CARD_WILD:
+			return false, "摸牌回合 只允许出+2+4"
+			break
+		case CARD_DRAW_2:
+			if !this.Match(the_color, the_points, true) {
+				return false, "功能牌花色不对"
+			}
+			break
+		case CARD_WILD_DRAW_4:
+			break
+		}
+		break
+	case TURN_TYPE_JUMP:
+		switch the_type_id {
+		case CARD_COMMON, CARD_JUMP, CARD_REV, CARD_WILD, CARD_DRAW_2, CARD_WILD_DRAW_4:
+			return false, "该回合被跳过"
+			break
+		}
+		//重置回合类型
+		this.turn_type = TURN_TYPE_COMMON
 		break
 	}
 	//判断反转/摸牌
@@ -325,6 +349,22 @@ func (this *UnoContext) CheckPlay(ids []int) (bool, string) {
 	}
 	this.this_turn_played = true
 	return true, ""
+}
+
+func (this *UnoContext) Match(color, points int, color_only bool) bool {
+	if this.points_tmp == POINTS_NO_MATCH {
+		color_only = true
+	}
+	if color_only {
+		if this.color_tmp == COLOR_NO_MATCH || this.color_tmp == color {
+			return true
+		}
+	} else {
+		if this.color_tmp == COLOR_NO_MATCH || this.color_tmp == color || this.points_tmp == points {
+			return true
+		}
+	}
+	return false
 }
 
 func (this *UnoContext) CheckWinner() bool {
