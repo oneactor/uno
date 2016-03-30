@@ -252,12 +252,17 @@ func (this *UnoContext) CheckPlay(ids []int) (bool, string) {
 	if len(ids) == 0 {
 		return false, "No cards."
 	}
-	//check used
+	//check used/in hands
+	cards_in_hand := this.GetNowUser().GetCards()
 	used := this.GetCardsUsed()
 	for _, id := range ids {
 		_, ok := used[id]
 		if ok {
 			return false, "Card " + fmt.Sprintf("%d", id) + " is used."
+		}
+		_, ok2 := cards_in_hand[id]
+		if !ok2 {
+			return false, "Card " + fmt.Sprintf("%d", id) + " is not in your hands."
 		}
 	}
 	cards := this.GetDesk().GetCards()
