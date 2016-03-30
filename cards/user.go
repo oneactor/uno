@@ -4,6 +4,9 @@ import (
 	"github.com/jesusslim/uno"
 )
 
+/**
+ * uno用户
+ */
 type UnoUser struct {
 	id     int
 	nick   string
@@ -15,8 +18,8 @@ func NewUnoUser(id int, nick string) uno.User {
 	return &UnoUser{
 		id:     id,
 		nick:   nick,
-		cards:  map[int]uno.Card{},
-		is_uno: false,
+		cards:  map[int]uno.Card{}, // 手牌
+		is_uno: false,              // 是否uno (只剩一张手牌)
 	}
 }
 

@@ -5,9 +5,12 @@ import (
 	"github.com/jesusslim/uno"
 )
 
+/**
+ * uno卡组
+ */
 type UnoDesk struct {
-	cards map[int]uno.Card
-	list  *list.List
+	cards map[int]uno.Card // 卡组
+	list  *list.List       // 顺序
 }
 
 func NewDesk() uno.Desk {

@@ -4,6 +4,9 @@ import (
 	"github.com/jesusslim/uno"
 )
 
+/**
+ * uno功能牌
+ */
 type UnoCardUseage struct {
 	UnoCard
 }

@@ -8,6 +8,7 @@ import (
 
 func main() {
 	fmt.Println("Example For Uno.")
+	//牌库准备
 	desk := cards.NewDesk()
 	cards_common := cards.NewCardCommons(1)
 	desk.PrepareCards(cards_common)
@@ -20,6 +21,7 @@ func main() {
 	}
 	desk.Shuffle()
 	fmt.Println("shuffled")
+	//用户准备
 	user1 := cards.NewUnoUser(10017, "T1")
 	user2 := cards.NewUnoUser(10018, "T2")
 	user3 := cards.NewUnoUser(10019, "T3")
@@ -29,6 +31,7 @@ func main() {
 	ct.AddUser(user2)
 	ct.AddUser(user3)
 	ct.AddUser(user4)
+	//发牌
 	for _, u := range ct.GetUsers() {
 		for i := 0; i < 7; i++ {
 			card := desk.GetNext()
