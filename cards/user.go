@@ -5,16 +5,18 @@ import (
 )
 
 type UnoUser struct {
-	id    int
-	nick  string
-	cards map[int]uno.Card
+	id     int
+	nick   string
+	cards  map[int]uno.Card
+	is_uno bool
 }
 
 func NewUnoUser(id int, nick string) uno.User {
 	return &UnoUser{
-		id:    id,
-		nick:  nick,
-		cards: map[int]uno.Card{},
+		id:     id,
+		nick:   nick,
+		cards:  map[int]uno.Card{},
+		is_uno: false,
 	}
 }
 
@@ -46,4 +48,36 @@ func (this *UnoUser) RemoveCards(ids []int) {
 	for _, id := range ids {
 		delete(this.cards, id)
 	}
+}
+
+func (this *UnoUser) SetAttr(name string, value interface{}) bool {
+	switch name {
+	case "isUno", "is_nuo":
+		this.is_uno = value.(bool)
+		return true
+		break
+	}
+	return false
+}
+
+func (this *UnoUser) GetAttr(name string) (interface{}, bool) {
+	switch name {
+	case "isUno", "is_nuo":
+		return this.is_uno, true
+		break
+	}
+	return nil, false
+}
+
+func (this *UnoUser) GetAttrStr(name string) string {
+	return ""
+}
+
+func (this *UnoUser) GetAttrBool(name string) bool {
+	switch name {
+	case "isUno", "is_nuo":
+		return this.is_uno
+		break
+	}
+	return false
 }

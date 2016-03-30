@@ -285,7 +285,7 @@ func (this *UnoContext) CheckPlay(ids []int) (bool, string) {
 	the_color := card_example.GetAttrInt("color")
 	the_type_id := card_example.GetAttrInt("typeId")
 	//the_ext_type := card_example.GetAttrInt("extType")
-	//cards_last := this.GetCardsLast()
+	cards_last := this.GetCardsLast()
 	//ins
 	switch this.turn_type {
 	case TURN_TYPE_COMMON:
@@ -323,8 +323,10 @@ func (this *UnoContext) CheckPlay(ids []int) (bool, string) {
 			return false, "摸牌回合 只允许出+2+4"
 			break
 		case CARD_DRAW_2:
-			if !this.Match(the_color, the_points, true) {
-				return false, "功能牌花色不对"
+			for _, card_last_tmp := range cards_last {
+				if card_last_tmp.GetTypeId() != CARD_DRAW_2 {
+					return false, "上回合+4 不允许+2"
+				}
 			}
 			break
 		case CARD_WILD_DRAW_4:
@@ -379,8 +381,10 @@ func (this *UnoContext) CheckWinner() bool {
 
 func (this *UnoContext) CheckUno() bool {
 	if this.GetNowUser().GetCardsNum() == 1 {
+		this.GetNowUser().SetAttr("isUno", true)
 		return true
 	} else {
+		this.GetNowUser().SetAttr("isUno", false)
 		return false
 	}
 }
