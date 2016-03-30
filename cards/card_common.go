@@ -4,6 +4,9 @@ import (
 	"github.com/jesusslim/uno"
 )
 
+/**
+ * uno普通卡
+ */
 type UnoCardCommon struct {
 	UnoCard
 }

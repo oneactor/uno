@@ -7,32 +7,37 @@ import (
 	"time"
 )
 
+//定义回合类型
 const (
-	TURN_TYPE_COMMON = 1
-	TURN_TYPE_DRAW   = 2
-	TURN_TYPE_JUMP   = 3
+	TURN_TYPE_COMMON = 1 // 正常
+	TURN_TYPE_DRAW   = 2 // 摸牌
+	TURN_TYPE_JUMP   = 3 // 跳过
 )
 
+/**
+ * uno上下文
+ */
 type UnoContext struct {
-	users            map[int]uno.User
-	clockwise        bool
-	user_queue       []int
-	user_index_now   int
-	cards_used       map[int]uno.Card
-	cards_used_queue []int
-	cards_last       map[int]uno.Card
-	cards_now        map[int]uno.Card
-	desk             uno.Desk
-	this_turn_played bool
-	seed             *rand.Rand
+	users            map[int]uno.User // 玩家/用户
+	clockwise        bool             // 顺时针
+	user_queue       []int            // 用户顺序
+	user_index_now   int              // 当前用户序号
+	cards_used       map[int]uno.Card // 已被使用的卡牌
+	cards_used_queue []int            // 使用顺序
+	cards_last       map[int]uno.Card // 上回合使用的牌
+	cards_now        map[int]uno.Card // 这回合使用的牌
+	desk             uno.Desk         // 牌库
+	this_turn_played bool             // 该回合是否成功出了牌
+	seed             *rand.Rand       // 随机数种子
 
 	//状态与回合相关
-	color_tmp    int
-	points_tmp   int
-	draw_num_ext int
-	turn_type    int
+	color_tmp    int // 颜色
+	points_tmp   int // 点数
+	draw_num_ext int // 摸牌数
+	turn_type    int // 回合类型
 }
 
+//根据出牌决定下回合类型
 func (this *UnoContext) GetTurnTypeByCard(card_type_id int) int {
 	switch card_type_id {
 	case CARD_COMMON, CARD_WILD:
@@ -51,6 +56,7 @@ func (this *UnoContext) GetTurnTypeByCard(card_type_id int) int {
 	return this.turn_type
 }
 
+//新建uno上下文
 func NewUnoContext(desk uno.Desk) *UnoContext {
 	return &UnoContext{
 		users:            map[int]uno.User{},

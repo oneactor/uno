@@ -6,10 +6,12 @@ import (
 )
 
 const (
+	//uno牌大类
 	TYPE_COMMON  = 1 //普通
 	TYPE_USEAGE  = 2 //功能
 	TYPE_ALL_CAN = 3 //万能
 
+	//uno牌类型
 	CARD_COMMON      = 101 //普通
 	CARD_JUMP        = 111 //跳过
 	CARD_DRAW_2      = 112 //摸2
@@ -17,12 +19,14 @@ const (
 	CARD_WILD        = 121 //万能
 	CARD_WILD_DRAW_4 = 122 //摸4万能
 
+	//颜色
 	COLOR_RED    = 1001
 	COLOR_YELLOW = 1002
 	COLOR_BLUE   = 1003
 	COLOR_GREEN  = 1004
 	COLOR_BLACK  = 1005
 
+	//点数
 	POINTS_0 = 0
 	POINTS_1 = 1
 	POINTS_2 = 2
@@ -34,19 +38,24 @@ const (
 	POINTS_8 = 8
 	POINTS_9 = 9
 
+	//无须匹配或无匹配时数值
 	COLOR_NO_MATCH  = -100
 	POINTS_NO_MATCH = -100
 )
 
+/**
+ * Uno卡牌
+ */
 type UnoCard struct {
-	id       int
-	type_id  int
-	title    string
-	color    int
-	points   int
-	ext_type int
+	id       int    // id
+	type_id  int    // 卡牌类型
+	title    string // 名称
+	color    int    // 颜色
+	points   int    // 点数
+	ext_type int    // 卡牌大类
 }
 
+//颜色转输出
 func ConvertColor(color int) string {
 	result := ""
 	switch color {
@@ -69,6 +78,7 @@ func ConvertColor(color int) string {
 	return result
 }
 
+//转卡牌名称
 func ConvertTitle(ext_type, type_id, color, points int) string {
 	result := ""
 	switch ext_type {
@@ -133,10 +143,12 @@ func (this *UnoCard) GetExtType() int {
 	return this.ext_type
 }
 
+//摸牌触发
 func (this *UnoCard) OnDraw() {
 	fmt.Println("on draw")
 }
 
+//新建卡牌
 func NewUnoCard(id int, type_id int, title string, color int, points int, ext_type int) *UnoCard {
 	return &UnoCard{
 		id:       id,
@@ -148,6 +160,7 @@ func NewUnoCard(id int, type_id int, title string, color int, points int, ext_ty
 	}
 }
 
+//新建卡牌
 func NewCard(id int, type_id int, title string, color int, points int, ext_type int) uno.Card {
 	return &UnoCard{
 		id:       id,
@@ -159,6 +172,7 @@ func NewCard(id int, type_id int, title string, color int, points int, ext_type 
 	}
 }
 
+//获取卡牌属性
 func (this *UnoCard) GetAttr(name string) interface{} {
 	switch name {
 	case "id":
