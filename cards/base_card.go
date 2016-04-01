@@ -47,12 +47,8 @@ const (
  * Uno卡牌
  */
 type UnoCard struct {
-	id       int    // id
-	type_id  int    // 卡牌类型
-	title    string // 名称
-	color    int    // 颜色
-	points   int    // 点数
-	ext_type int    // 卡牌大类
+	uno.BaseCard
+	ext_type int // 卡牌大类
 }
 
 //颜色转输出
@@ -119,76 +115,28 @@ func ConvertTitle(ext_type, type_id, color, points int) string {
 	return result
 }
 
-func (this *UnoCard) GetId() int {
-	return this.id
-}
-
-func (this *UnoCard) GetTypeId() int {
-	return this.type_id
-}
-
-func (this *UnoCard) GetTitle() string {
-	return this.title
-}
-
-func (this *UnoCard) GetColor() int {
-	return this.color
-}
-
-func (this *UnoCard) GetPoints() int {
-	return this.points
-}
-
 func (this *UnoCard) GetExtType() int {
 	return this.ext_type
-}
-
-//摸牌触发
-func (this *UnoCard) OnDraw() {
-	fmt.Println("on draw")
 }
 
 //新建卡牌
 func NewUnoCard(id int, type_id int, title string, color int, points int, ext_type int) *UnoCard {
 	return &UnoCard{
-		id:       id,
-		type_id:  type_id,
-		title:    title,
-		color:    color,
-		points:   points,
-		ext_type: ext_type,
+		*uno.NewBaseCard(id, type_id, title, color, points),
+		ext_type,
 	}
 }
 
 //新建卡牌
 func NewCard(id int, type_id int, title string, color int, points int, ext_type int) uno.Card {
-	return &UnoCard{
-		id:       id,
-		type_id:  id,
-		title:    title,
-		color:    color,
-		points:   points,
-		ext_type: ext_type,
-	}
+	return NewUnoCard(id, type_id, title, color, points, ext_type)
 }
 
 //获取卡牌属性
 func (this *UnoCard) GetAttr(name string) interface{} {
 	switch name {
-	case "id":
-		return this.id
-		break
-	case "type_id", "typeId":
-		return this.type_id
-		break
-	case "title":
-		return this.title
-		break
-	case "color":
-		return this.color
-		break
-	case "points":
-		return this.points
+	case "id", "type_id", "typeId", "title", "color", "points":
+		return this.BaseCard.GetAttr(name)
 		break
 	case "ext_type", "extType":
 		return this.ext_type
@@ -199,29 +147,12 @@ func (this *UnoCard) GetAttr(name string) interface{} {
 
 func (this *UnoCard) GetAttrInt(name string) int {
 	switch name {
-	case "id":
-		return this.id
-		break
-	case "type_id", "typeId":
-		return this.type_id
-		break
-	case "color":
-		return this.color
-		break
-	case "points":
-		return this.points
+	case "id", "type_id", "typeId", "color", "points":
+		return this.BaseCard.GetAttrInt(name)
 		break
 	case "ext_type", "extType":
 		return this.ext_type
 		break
 	}
 	return 0
-}
-
-func (this *UnoCard) GetAttrStr(name string) string {
-	switch name {
-	case "title":
-		return this.title
-	}
-	return ""
 }

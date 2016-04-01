@@ -33,11 +33,7 @@ const (
 )
 
 type BlackJack21Card struct {
-	id      int
-	type_id int
-	title   string
-	color   int
-	points  int
+	uno.BaseCard
 }
 
 //颜色转输出
@@ -82,96 +78,22 @@ func ConvertTitle(color, points int) string {
 	return result
 }
 
-func (this *BlackJack21Card) GetId() int {
-	return this.id
-}
-
-func (this *BlackJack21Card) GetTypeId() int {
-	return this.type_id
-}
-
-func (this *BlackJack21Card) GetTitle() string {
-	return this.title
-}
-
-func (this *BlackJack21Card) GetColor() int {
-	return this.color
-}
-
-func (this *BlackJack21Card) GetPoints() int {
-	return this.points
-}
-
-func (this *BlackJack21Card) OnDraw() {
-	fmt.Println("on draw")
-}
-
 func NewBlackJack21Card(id, points, color int) *BlackJack21Card {
-	tmp := BlackJack21Card{
-		id:     id,
-		color:  color,
-		points: points,
-		title:  ConvertTitle(color, points),
-	}
+	var type_id int
 	if points == POINTS_1 {
-		tmp.type_id = JACK_ACE
+		type_id = JACK_ACE
 	} else if points >= POINTS_10 {
-		tmp.type_id = JACK_10
+		type_id = JACK_10
 	} else {
-		tmp.type_id = JACK_COMMON
+		type_id = JACK_COMMON
 	}
-	return &tmp
+	return &BlackJack21Card{
+		*uno.NewBaseCard(id, type_id, ConvertTitle(color, points), color, points),
+	}
 }
 
 func NewCard(id, points, color int) uno.Card {
 	return NewBlackJack21Card(id, points, color)
-}
-
-func (this *BlackJack21Card) GetAttr(name string) interface{} {
-	switch name {
-	case "id":
-		return this.id
-		break
-	case "type_id", "typeId":
-		return this.type_id
-		break
-	case "title":
-		return this.title
-		break
-	case "color":
-		return this.color
-		break
-	case "points":
-		return this.points
-		break
-	}
-	return nil
-}
-
-func (this *BlackJack21Card) GetAttrInt(name string) int {
-	switch name {
-	case "id":
-		return this.id
-		break
-	case "type_id", "typeId":
-		return this.type_id
-		break
-	case "color":
-		return this.color
-		break
-	case "points":
-		return this.points
-		break
-	}
-	return 0
-}
-
-func (this *BlackJack21Card) GetAttrStr(name string) string {
-	switch name {
-	case "title":
-		return this.title
-	}
-	return ""
 }
 
 func NewCards(id_from int) []uno.Card {

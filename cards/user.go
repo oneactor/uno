@@ -8,49 +8,19 @@ import (
  * uno用户
  */
 type UnoUser struct {
-	id     int
-	nick   string
-	cards  map[int]uno.Card
+	uno.BaseUser
 	is_uno bool
 }
 
-func NewUnoUser(id int, nick string) uno.User {
+func NewUnoUserStruct(id int, nick string) *UnoUser {
 	return &UnoUser{
-		id:     id,
-		nick:   nick,
-		cards:  map[int]uno.Card{}, // 手牌
-		is_uno: false,              // 是否uno (只剩一张手牌)
+		*uno.NewBaseUser(id, nick),
+		false, // 是否uno (只剩一张手牌)
 	}
 }
 
-func (this *UnoUser) GetId() int {
-	return this.id
-}
-
-func (this *UnoUser) GetNick() string {
-	return this.nick
-}
-
-func (this *UnoUser) GetCards() map[int]uno.Card {
-	return this.cards
-}
-
-func (this *UnoUser) GetCardsNum() int {
-	return len(this.cards)
-}
-
-func (this *UnoUser) AddCard(card uno.Card) {
-	this.cards[card.GetId()] = card
-}
-
-func (this *UnoUser) RemoveCard(id int) {
-	delete(this.cards, id)
-}
-
-func (this *UnoUser) RemoveCards(ids []int) {
-	for _, id := range ids {
-		delete(this.cards, id)
-	}
+func NewUnoUser(id int, nick string) uno.User {
+	return NewUnoUserStruct(id, nick)
 }
 
 func (this *UnoUser) SetAttr(name string, value interface{}) bool {

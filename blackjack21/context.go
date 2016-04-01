@@ -3,8 +3,6 @@ package blackjack21
 import (
 	"fmt"
 	"github.com/jesusslim/uno"
-	"math/rand"
-	"time"
 )
 
 type Points struct {
@@ -12,33 +10,33 @@ type Points struct {
 	ace_num       int
 }
 
+const (
+	ACTION_HIT       = 1
+	ACTION_STAND     = 2
+	ACTION_DOUBLE    = 3
+	ACTION_SURRENDER = 4
+)
+
+func GetActions() map[int]string {
+	return map[int]string{
+		ACTION_HIT:       "HIT",
+		ACTION_STAND:     "STAND",
+		ACTION_DOUBLE:    "DOUBLE",
+		ACTION_SURRENDER: "SURRENDER",
+	}
+}
+
 type BlackJack21Context struct {
-	users            map[int]uno.User // 玩家/用户
-	clockwise        bool             // 顺时针
-	user_queue       []int            // 用户顺序
-	user_index_now   int              // 当前用户序号
-	cards_used       map[int]uno.Card // 已被使用的卡牌
-	cards_used_queue []int            // 使用顺序
-	cards_last       map[int]uno.Card // 上回合使用的牌
-	cards_now        map[int]uno.Card // 这回合使用的牌
-	desk             uno.Desk         // 牌库
-	seed             *rand.Rand       // 随机数种子
-	points           map[int]*Points
+	uno.BaseContext
+	points   map[int]*Points
+	turn_end bool
 }
 
 func NewBlackJack21Context(desk uno.Desk) *BlackJack21Context {
 	return &BlackJack21Context{
-		users:            map[int]uno.User{},
-		clockwise:        true,
-		user_queue:       []int{},
-		user_index_now:   0,
-		cards_used:       map[int]uno.Card{},
-		cards_used_queue: []int{},
-		cards_last:       map[int]uno.Card{},
-		cards_now:        map[int]uno.Card{},
-		desk:             desk,
-		seed:             rand.New(rand.NewSource(time.Now().UnixNano())),
-		points:           map[int]*Points{},
+		*uno.NewBaseContext(desk),
+		map[int]*Points{},
+		false,
 	}
 }
 
@@ -47,119 +45,114 @@ func NewContext(desk uno.Desk) uno.Context {
 }
 
 func (this *BlackJack21Context) AddUser(user uno.User) {
-	this.users[user.GetId()] = user
+	this.BaseContext.AddUser(user)
 	this.points[user.GetId()] = &Points{
 		common_points: 0,
 		ace_num:       0,
 	}
-	this.user_queue = append(this.user_queue, user.GetId())
-}
-
-func (this *BlackJack21Context) GetUsers() map[int]uno.User {
-	return this.users
-}
-
-func (this *BlackJack21Context) GetNextUser() uno.User {
-	var next_index int
-	next_index = (this.user_index_now + 1) % len(this.user_queue)
-	return this.users[this.user_queue[next_index]]
-}
-
-func (this *BlackJack21Context) GetNowUser() uno.User {
-	return this.users[this.user_queue[this.user_index_now]]
-}
-
-func (this *BlackJack21Context) GetCardsUsed() map[int]uno.Card {
-	return this.cards_used
-}
-
-func (this *BlackJack21Context) GetCardsUsedQueue() []int {
-	return this.cards_used_queue
-}
-
-func (this *BlackJack21Context) GetCardsNow() map[int]uno.Card {
-	return this.cards_now
-}
-
-func (this *BlackJack21Context) GetCardsLast() map[int]uno.Card {
-	return this.cards_last
-}
-
-func (this *BlackJack21Context) CardsUse(cards map[int]uno.Card) {
-	for k, v := range cards {
-		this.cards_now[k] = v
-		this.cards_used[k] = v
-		this.cards_used_queue = append(this.cards_used_queue, k)
-	}
-}
-
-func (this *BlackJack21Context) CardsUseWithId(ids ...int) {
-	for _, id := range ids {
-		card, ok := this.desk.GetCard(id)
-		if ok {
-			this.cards_now[id] = card
-			this.cards_used[id] = card
-			this.cards_used_queue = append(this.cards_used_queue, id)
-		}
-	}
 }
 
 func (this *BlackJack21Context) TurnNext() {
-	this.cards_last = this.cards_now
-	this.cards_now = map[int]uno.Card{}
-	this.user_index_now = (this.user_index_now + 1) % len(this.user_queue)
-}
-
-func (this *BlackJack21Context) GetDesk() uno.Desk {
-	return this.desk
-}
-
-func (this *BlackJack21Context) OnStart() {
-	this.Draw(1)
-}
-
-func (this *BlackJack21Context) OnEnd() (bool, string) {
-	if this.GetDesk().GetLeftCount() == 0 {
-		return false, "Cards not enough"
-	}
-	this.TurnNext()
-	return true, ""
+	this.BaseContext.TurnNext()
+	this.turn_end = false
 }
 
 func (this *BlackJack21Context) OnPlay(ids []int, params map[string]interface{}) {
-	user := this.GetNowUser()
-	for _, card := range user.GetCards() {
-		//TODO
-	}
-}
-
-func (this *BlackJack21Context) Draw(num int) (bool, string) {
-	if this.GetDesk().GetLeftCount() < num {
-		return false, "Cards not enough."
-	} else {
-		u := this.GetNowUser()
-		fmt.Println(u.GetNick(), " 摸 ", fmt.Sprintf("%d", num), " 张")
-		for i := 0; i < num; i++ {
-			card := this.GetDesk().GetNext()
-			u.AddCard(card)
+	action, ok := params["action"]
+	if ok {
+		user := this.GetNowUser()
+		switch action {
+		case ACTION_HIT, ACTION_DOUBLE:
+			this.Draw(1)
+			break
+		case ACTION_STAND:
+			this.turn_end = true
+			fmt.Println("选择停牌")
+			break
+		case ACTION_SURRENDER:
+			this.turn_end = true
+			user.SetAttr("is_out", true)
+			fmt.Println("放弃比赛")
+			break
 		}
 	}
-	return true, ""
 }
 
-func (this *BlackJack21Context) CheckPlay(ids []int) (bool, string) {
-	return true, ""
+func (this *BlackJack21Context) ReCountPoints() {
+	user := this.GetNowUser()
+	if !user.GetAttrBool("isOut") {
+		point := &Points{0, 0}
+		for _, card := range user.GetCards() {
+			switch card.GetTypeId() {
+			case JACK_COMMON:
+				point.common_points += card.GetAttrInt("points")
+				break
+			case JACK_10:
+				point.common_points += 10
+				break
+			case JACK_ACE:
+				point.ace_num++
+				break
+			}
+		}
+		this.points[user.GetId()] = point
+	}
 }
 
-func (this *BlackJack21Context) CheckWinner() bool {
+func (this *BlackJack21Context) CheckTurnEnd() bool {
+	user := this.GetNowUser()
+	if user.GetAttrBool("isOut") {
+		delete(this.points, user.GetId())
+	} else {
+		this.ReCountPoints()
+		point := this.points[user.GetId()]
+		if point.common_points+point.ace_num > 21 {
+			fmt.Println("爆牌")
+			user.SetAttr("isOut", true)
+			this.turn_end = true
+			delete(this.points, user.GetId())
+		}
+	}
+	if this.turn_end {
+		fmt.Println("回合结束")
+		return true
+	}
 	return false
 }
 
-func (this *BlackJack21Context) IsClockwise() bool {
-	return this.clockwise
-}
-
-func (this *BlackJack21Context) SetClockwise(clockwise bool) bool {
-	this.clockwise = clockwise
-	return this.clockwise
+func (this *BlackJack21Context) CheckWinner() bool {
+	max_id := 0
+	max := 0
+	for id, point := range this.points {
+		min := 0
+		common := point.common_points
+		min = common + point.ace_num
+		for i := 0; i < point.ace_num; i++ {
+			if min > 21 {
+				break
+			}
+			if min == 21 {
+				if min > max {
+					max = min
+					max_id = id
+				}
+				break
+			}
+			min = min + 9
+		}
+		if min <= 21 {
+			if min > max {
+				max = min
+				max_id = id
+			}
+		}
+	}
+	users := this.GetUsers()
+	if max_id > 0 {
+		fmt.Println("Winner is ", users[max_id].GetNick())
+		fmt.Println("His score:", fmt.Sprintf("%d", max))
+	} else {
+		fmt.Println("No winner.")
+	}
+	return true
 }

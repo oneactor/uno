@@ -13,14 +13,12 @@ type UnoCardWild struct {
 
 func NewCardWild(id, type_id int) uno.Card {
 	return &UnoCardCommon{
-		UnoCard{
-			id:       id,
-			type_id:  type_id,
-			title:    ConvertTitle(TYPE_ALL_CAN, type_id, COLOR_BLACK, -1),
-			color:    COLOR_BLACK,
-			points:   -1,
-			ext_type: TYPE_ALL_CAN,
-		},
+		*NewUnoCard(id,
+			type_id,
+			ConvertTitle(TYPE_ALL_CAN, type_id, COLOR_BLACK, -1),
+			COLOR_BLACK,
+			-1,
+			TYPE_ALL_CAN),
 	}
 }
 
