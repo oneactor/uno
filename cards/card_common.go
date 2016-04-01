@@ -13,14 +13,7 @@ type UnoCardCommon struct {
 
 func NewCardCommon(id, color, points int) uno.Card {
 	return &UnoCardCommon{
-		UnoCard{
-			id:       id,
-			type_id:  CARD_COMMON,
-			title:    ConvertTitle(TYPE_COMMON, CARD_COMMON, color, points),
-			color:    color,
-			points:   points,
-			ext_type: TYPE_COMMON,
-		},
+		*NewUnoCard(id, CARD_COMMON, ConvertTitle(TYPE_COMMON, CARD_COMMON, color, points), color, points, TYPE_COMMON),
 	}
 }
 

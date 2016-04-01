@@ -3,8 +3,6 @@ package cards
 import (
 	"fmt"
 	"github.com/jesusslim/uno"
-	"math/rand"
-	"time"
 )
 
 //定义回合类型
@@ -18,17 +16,9 @@ const (
  * uno上下文
  */
 type UnoContext struct {
-	users            map[int]uno.User // 玩家/用户
-	clockwise        bool             // 顺时针
-	user_queue       []int            // 用户顺序
-	user_index_now   int              // 当前用户序号
-	cards_used       map[int]uno.Card // 已被使用的卡牌
-	cards_used_queue []int            // 使用顺序
-	cards_last       map[int]uno.Card // 上回合使用的牌
-	cards_now        map[int]uno.Card // 这回合使用的牌
-	desk             uno.Desk         // 牌库
-	this_turn_played bool             // 该回合是否成功出了牌
-	seed             *rand.Rand       // 随机数种子
+	uno.BaseContext
+
+	this_turn_played bool // 该回合是否成功出了牌
 
 	//状态与回合相关
 	color_tmp    int // 颜色
@@ -59,22 +49,14 @@ func (this *UnoContext) GetTurnTypeByCard(card_type_id int) int {
 //新建uno上下文
 func NewUnoContext(desk uno.Desk) *UnoContext {
 	return &UnoContext{
-		users:            map[int]uno.User{},
-		clockwise:        true,
-		user_queue:       []int{},
-		user_index_now:   0,
-		cards_used:       map[int]uno.Card{},
-		cards_used_queue: []int{},
-		cards_last:       map[int]uno.Card{},
-		cards_now:        map[int]uno.Card{},
-		desk:             desk,
-		this_turn_played: false,
-		seed:             rand.New(rand.NewSource(time.Now().UnixNano())),
+		*uno.NewBaseContext(desk),
 
-		color_tmp:    COLOR_NO_MATCH,
-		points_tmp:   POINTS_NO_MATCH,
-		draw_num_ext: 0,
-		turn_type:    TURN_TYPE_COMMON,
+		false,
+
+		COLOR_NO_MATCH,
+		POINTS_NO_MATCH,
+		0,
+		TURN_TYPE_COMMON,
 	}
 }
 
@@ -82,96 +64,13 @@ func NewContext(desk uno.Desk) uno.Context {
 	return NewUnoContext(desk)
 }
 
-func (this *UnoContext) AddUser(user uno.User) {
-	this.users[user.GetId()] = user
-	this.user_queue = append(this.user_queue, user.GetId())
-}
-
-func (this *UnoContext) GetUsers() map[int]uno.User {
-	return this.users
-}
-
-func (this *UnoContext) GetNextUser() uno.User {
-	var next_index int
-	if this.clockwise {
-		next_index = (this.user_index_now + 1) % len(this.user_queue)
-	} else {
-		next_index = (this.user_index_now - 1) % len(this.user_queue)
-	}
-	return this.users[this.user_queue[next_index]]
-}
-
-func (this *UnoContext) GetNowUser() uno.User {
-	return this.users[this.user_queue[this.user_index_now]]
-}
-
-func (this *UnoContext) IsClockwise() bool {
-	return this.clockwise
-}
-
-func (this *UnoContext) SetClockwise(clockwise bool) bool {
-	this.clockwise = clockwise
-	return this.clockwise
-}
-
-func (this *UnoContext) GetCardsUsed() map[int]uno.Card {
-	return this.cards_used
-}
-
-func (this *UnoContext) GetCardsUsedQueue() []int {
-	return this.cards_used_queue
-}
-
-func (this *UnoContext) GetCardsNow() map[int]uno.Card {
-	return this.cards_now
-}
-
-func (this *UnoContext) GetCardsLast() map[int]uno.Card {
-	return this.cards_last
-}
-
-func (this *UnoContext) CardsUse(cards map[int]uno.Card) {
-	for k, v := range cards {
-		this.cards_now[k] = v
-		this.cards_used[k] = v
-		this.cards_used_queue = append(this.cards_used_queue, k)
-	}
-}
-
-func (this *UnoContext) CardsUseWithId(ids ...int) {
-	for _, id := range ids {
-		card, ok := this.desk.GetCard(id)
-		if ok {
-			this.cards_now[id] = card
-			this.cards_used[id] = card
-			this.cards_used_queue = append(this.cards_used_queue, id)
-		}
-	}
-}
-
 func (this *UnoContext) TurnNext() {
 	if this.this_turn_played {
-		this.cards_last = this.cards_now
-		this.cards_now = map[int]uno.Card{}
-	}
-	if this.clockwise {
-		this.user_index_now = (this.user_index_now + 1) % len(this.user_queue)
-	} else {
-		temp := this.user_index_now - 1
-		if temp < 0 {
-			temp = temp + len(this.user_queue)
-		}
-		this.user_index_now = temp % len(this.user_queue)
+		this.SetCardsLast(this.GetCardsNow())
+		this.SetCardsNow(map[int]uno.Card{})
 	}
 	this.this_turn_played = false
-}
-
-func (this *UnoContext) GetDesk() uno.Desk {
-	return this.desk
-}
-
-func (this *UnoContext) OnStart() {
-
+	this.BaseContext.TurnNext()
 }
 
 func (this *UnoContext) OnEnd() (bool, string) {
@@ -215,7 +114,7 @@ func (this *UnoContext) OnPlay(ids []int, params map[string]interface{}) {
 					this.color_tmp = color_in_param.(int)
 				} else {
 					colors := []int{COLOR_BLUE, COLOR_GREEN, COLOR_RED, COLOR_YELLOW}
-					index := this.seed.Intn(len(colors))
+					index := this.GetRandom(len(colors))
 					this.color_tmp = colors[index]
 				}
 				fmt.Println("指定颜色:", ConvertColor(this.color_tmp))

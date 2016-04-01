@@ -9,5 +9,7 @@ type Card interface {
 	GetAttr(string) interface{} //获取某个属性
 	GetAttrInt(string) int
 	GetAttrStr(string) string
-	OnDraw() //摸牌触发
+	OnDraw()        //摸牌触发
+	GetColor() int  //花色
+	GetPoints() int //点数
 }

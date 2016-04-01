@@ -13,14 +13,12 @@ type UnoCardUseage struct {
 
 func NewCardUseage(id, color, type_id int) uno.Card {
 	return &UnoCardCommon{
-		UnoCard{
-			id:       id,
-			type_id:  type_id,
-			title:    ConvertTitle(TYPE_USEAGE, type_id, color, -1),
-			color:    color,
-			points:   -1,
-			ext_type: TYPE_USEAGE,
-		},
+		*NewUnoCard(id,
+			type_id,
+			ConvertTitle(TYPE_USEAGE, type_id, color, -1),
+			color,
+			-1,
+			TYPE_USEAGE),
 	}
 }
 
