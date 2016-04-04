@@ -138,7 +138,7 @@ func (this *BlackJack21Context) CheckWinner() bool {
 				}
 				break
 			}
-			min = min + 9
+			min = min + 10
 		}
 		if min <= 21 {
 			if min > max {
