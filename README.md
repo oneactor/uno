@@ -44,3 +44,19 @@ Base structs implement the base functions of their Interface.We can also write o
   See the Black Jack 21 example code : uno/example/main21.go
   
   以上21点游戏例子
+  
+## 说明
+
+建议通过以下方式获取 
+
+	go get -u github.com/jesusslim/uno
+	
+	go get -u github.com/jesusslim/uno
+		
+	go get -u github.com/jesusslim/uno
+	
+重要的事情说三遍！
+
+因为这个项目我会从github同步到oschina等地方 如果您是从非github看到的 拉取下来可能包路径会有问题 因此强烈建议通过go get获取！
+
+感谢各位支持
